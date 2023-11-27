@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - 9411:9411
+  
+  otel-collector2:
+    image: otel/opentelemetry-collector:latest
+    ports:
+      - '1888:1888' #pprof extension
+      - '8888:8888' # prometheus metrics exposed by the collector
+      - '8889:8889' # prometheus exporter metrics
+      - '13133:13133' #health_check extension
+      - '55679:55679' # zpages extension
+      - '4317:4317'  # OTLP gRPC receiver
+      - '4318:4318'  # HTTP exporter for metrics (Prometheus)
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config", "/etc/otel-collector-config.yaml"]
+  
+  prometheus:
+    image: prom/prometheus:v2.28.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - '9090:9090'
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:8.0.6
+    container_name: grafana
+    ports:
+      - '3000:3000'
+    networks:
+      - monitoring
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+  # oap:
+  #   container_name: oap
+  #   image: iamgename
+  #   environment:
+  #     - SW_RECEIVER_ZIPKIN=default
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "/skywalking/bin/swctl ch"]
+  #     interval: 1m30s
+  #     timeout: 30s
+  #     retries: 5
+  #     start_period: 30s
+  #   ports:
+  #     - "11800:11800"
+  #     - "12800:12800"
+  # ui:
+  #   image: imageName
+  #   container_name: ui
+  #   depends_on:
+  #     oap:
+  #       condition: service_health
+  #   links:
+  #     - oap
+  #   ports:
+  #     -"8080:8080"
+  #   environment:
+  #     - SW_OAP_ADDRESS= http://oap:12800
+
+
+networks:
+  monitoring:

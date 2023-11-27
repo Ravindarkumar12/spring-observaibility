@@ -1,0 +1,5 @@
+receiver-zipkin:
+  selector: ${SW_RECEIVER_ZIPKIN:default}
+  default:
+    searchableTracesTags: ${SW_ZIPKIN_SEARCHABLE_TAG_KEYS:http.method}
+    sampleRate: ${SW}

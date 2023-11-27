@@ -1,0 +1,36 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+        endpoint: "0.0.0.0:4318"  # HTTP receiver address for trace data
+processors:
+  batch:
+
+exporters:
+  otlp:
+    endpoint: "localhost:11800"
+  prometheus:
+    endpoint: "0.0.0.0:9090"
+  zipkin:
+    endpoint: "http://localhost:9411/api/v2/spans"
+    tls:
+      insecure: true
+  extenstions:
+    health_check:
+    pprof:
+      endpoint: 1888
+    zpages:
+      endpoint: 55679
+
+service:
+  extenstions: [otlp logging jaeger prometheus zipkin]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp,zipkin]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging, prometheus]
